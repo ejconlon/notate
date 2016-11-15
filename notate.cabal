@@ -18,6 +18,7 @@ executable notate
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
+                     , directory
                      , ipython-kernel
                      , parsec
                      , text

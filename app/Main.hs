@@ -3,6 +3,7 @@ module Main where
 import qualified Data.Text as T
 
 import System.Environment (getArgs)
+import System.Directory
 
 import Text.Parsec
 import Text.Parsec.String
@@ -139,8 +140,8 @@ config = KernelConfig
   }
 
 
-install :: FilePath -> KernelConfig IO output result -> IO ()
-install configDir config = undefined
+install :: FilePath -> String -> KernelConfig IO output result -> IO ()
+install configDir target config = undefined
 
   -- liftIO $ withTmpDir $ \tmp -> do
   --   let kernelDir = tmp </> languageName (kernelLanguageInfo config)
@@ -159,8 +160,8 @@ install configDir config = undefined
   --     tmp <- getTemporaryDirectory
   --     withTempDirectory tmp "easyKernel" act
 
-jupyter :: FilePath -> IO ()
-jupyter = undefined
+notebook :: FilePath -> String -> IO ()
+notebook = undefined
 
 main :: IO ()
 main = do
@@ -168,12 +169,12 @@ main = do
   case args of
     ["kernel", profile] ->
       easyKernel profile config
-    ["jupyter", configDir] -> do
-      jupyter configDir
-    ["install", configDir] -> do
-      install configDir config
+    ["notebook", configDir, target] -> do
+      notebook configDir target
+    ["install", configDir, target] -> do
+      install configDir target config
     _ -> do
       putStrLn "Usage:"
-      putStrLn "notate install CONFIG_DIR"
-      putStrLn "notate jupyter CONFIG_DIR"
+      putStrLn "notate install CONFIG_DIR TARGET"
+      putStrLn "notate notebook CONFIG_DIR TARGET"
       putStrLn "notate kernel PROFILE_FILE"
