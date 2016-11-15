@@ -1,0 +1,28 @@
+name:                notate
+version:             0.1.0.0
+synopsis:            Initial project template from stack
+description:         Please see README.md
+homepage:            https://github.com/ejconlon/notate#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Eric Conlon
+maintainer:          ejconlon@gmail.com
+copyright:           2016 Eric Conlon
+category:            Web
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+executable notate
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , ipython-kernel
+                     , parsec
+                     , text
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/ejconlon/notate

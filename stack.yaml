@@ -1,0 +1,11 @@
+resolver: lts-7.9
+
+packages:
+- '.'
+- 'ipython-kernel'
+
+extra-deps: []
+
+flags: {}
+
+extra-package-dbs: []
