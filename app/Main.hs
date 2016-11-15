@@ -7,7 +7,7 @@ import System.Environment (getArgs)
 import Text.Parsec
 import Text.Parsec.String
 
-import IHaskell.IPython.EasyKernel (easyKernel, installKernelspec, KernelConfig(..))
+import IHaskell.IPython.EasyKernel (easyKernel, KernelConfig(..))
 import IHaskell.IPython.Types
 
 -- NOTE(eric) this is just ihaskell test code to be ripped out
@@ -122,8 +122,8 @@ languageRun code init intermediate = do
        Left err   -> err
        Right expr -> show (eval expr), IHaskell.IPython.Types.Ok, "")
 
-simpleConfig :: KernelConfig IO String String
-simpleConfig = KernelConfig
+config :: KernelConfig IO String String
+config = KernelConfig
   { kernelLanguageInfo = languageConfig
   , writeKernelspec = const $ return languageKernelspec
   , displayOutput = displayString
@@ -138,17 +138,42 @@ simpleConfig = KernelConfig
   , kernelImplVersion = "0.0"
   }
 
+
+install :: FilePath -> KernelConfig IO output result -> IO ()
+install configDir config = undefined
+
+  -- liftIO $ withTmpDir $ \tmp -> do
+  --   let kernelDir = tmp </> languageName (kernelLanguageInfo config)
+  --   createDirectoryIfMissing True kernelDir
+  --   kernelSpec <- writeKernelspec config kernelDir
+
+  --   let filename = kernelDir </> "kernel.json"
+  --   BL.writeFile filename $ encode $ toJSON kernelSpec
+
+  --   let replaceFlag = ["--replace" | replace]
+  --       installPrefixFlag = maybe ["--user"] (\prefix -> ["--prefix", prefix]) installPrefixMay
+  --       cmd = concat [["kernelspec", "install"], installPrefixFlag, [kernelDir], replaceFlag]
+  --   void $ rawSystem "ipython" cmd
+  -- where
+  --   withTmpDir act = do
+  --     tmp <- getTemporaryDirectory
+  --     withTempDirectory tmp "easyKernel" act
+
+jupyter :: FilePath -> IO ()
+jupyter = undefined
+
 main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["kernel", profileFile] ->
-      easyKernel profileFile simpleConfig
-    ["install"] -> do
-      putStrLn "Installing kernelspec..."
-      installKernelspec simpleConfig False Nothing
+    ["kernel", profile] ->
+      easyKernel profile config
+    ["jupyter", configDir] -> do
+      jupyter configDir
+    ["install", configDir] -> do
+      install configDir config
     _ -> do
       putStrLn "Usage:"
-      putStrLn "notate-exe install      -- set up the kernelspec"
-      putStrLn
-        "notate-exe kernel FILE  -- run a kernel with FILE for communication with the frontend"
+      putStrLn "notate install CONFIG_DIR"
+      putStrLn "notate jupyter CONFIG_DIR"
+      putStrLn "notate kernel PROFILE_FILE"
