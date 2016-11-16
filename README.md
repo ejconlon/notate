@@ -3,7 +3,7 @@ notate
 
 An easy workflow for IHaskell notebooks using intero.
 
-STATUS: Not functional yet. The kernel is the ihaskell demo kernel, not intero.
+STATUS: Not functional yet. The kernel is the ihaskell demo "calc" kernel, not intero.
 
 NOTE: This lifts whole the `ipython-haskell` subproject from https://github.com/gibiansky/IHaskell since there's some 8.1 issues in that project. For now, I've included the original license as `LICENSE.ihaskell` here, but I'm going to get rid of both ASAP.
 
@@ -21,6 +21,7 @@ These are set when running `jupyter`:
     JUPYTER_PATH=.notate/myproject/data
     JUPYTER_RUNTIME_DIR=.notate/myproject/runtime
 
+It should be simple enough to read/write to intero stdin/stdout for cell evaluation, but how will client code emit structured data like images? The `ihaskell` approach is to bake all "display data" formats into the kernel and do special processing of `ghci` output.  This doesn't scale well, for obvious reasons. As horrible as it sounds, we can do IO tricks to make this problem less bad. Client code can write a JSONL-formatted Array of DisplayData structs (MIME type and encoded content pairs) to a file path specified in a particular environment variable, `NOTATE_DISPLAY_PATH`. (NOTE: JSONL is simply a sequence of JSON documents separated by newlines.) It's a hack but it should work.  Obviously it's probably best to provide a lightweight `notate-client` library to handle the details.  Client code can manage that and other specific format adaptors (images, plots, tables, HTML) in their `cabal` dependencies.
 
 Installation and Execution
 --------------------------
