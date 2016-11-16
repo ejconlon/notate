@@ -7,7 +7,7 @@ import qualified Data.Text as T
 import IHaskell.IPython.EasyKernel (easyKernel, KernelConfig(..))
 import IHaskell.IPython.Types
 import System.Directory
-import System.Environment (getArgs)
+import System.Environment (getArgs, getEnv)
 import System.FilePath
 import System.Process
 import Text.Parsec
@@ -68,12 +68,12 @@ languageConfig = LanguageInfo
   , languageCodeMirrorMode = "null"
   }
 
-languageKernelspec :: KernelSpec
-languageKernelspec = KernelSpec
+makeKernelSpec :: FilePath -> String -> KernelSpec
+makeKernelSpec configDir target = KernelSpec
   { kernelDisplayName = "notate"
   , kernelLanguage = "notate"
-  , kernelCommand = ["stack", "exec", "notate", "--", "kernel", "{connection_file}"]
-  }  -- TODO should include config and target in command line
+  , kernelCommand = ["stack", "exec", "notate", "--", "kernel", configDir, target, "{connection_file}"]
+  }
 
 displayString :: String -> [DisplayData]
 displayString str = [DisplayData PlainText (T.pack str)]
@@ -125,10 +125,12 @@ languageRun code init intermediate = do
        Left err   -> err
        Right expr -> show (eval expr), IHaskell.IPython.Types.Ok, "")
 
-config :: KernelConfig IO String String
-config = KernelConfig
+makeConfig :: FilePath -> String -> KernelConfig IO String String
+makeConfig configDir target =
+  let kernelSpec = makeKernelSpec configDir target
+  in KernelConfig
   { kernelLanguageInfo = languageConfig
-  , writeKernelspec = const $ return languageKernelspec
+  , writeKernelspec = const (return kernelSpec)
   , displayOutput = displayString
   , displayResult = displayString
   , completion = languageCompletion
@@ -140,7 +142,6 @@ config = KernelConfig
   , kernelImplName = "notate"
   , kernelImplVersion = "0.0"
   }
-
 
 install :: FilePath -> String -> KernelConfig IO output result -> IO ()
 install configDir target config = do
@@ -157,15 +158,18 @@ install configDir target config = do
       createDirectory subConfigDir
       createDirectory dataDir
       createDirectory runtimeDir
-      let kernelName = languageName (kernelLanguageInfo config)
-          kernelDir = dataDir </> kernelName
-      createDirectory kernelDir
-      kernelSpec <- writeKernelspec config kernelDir
-      let kernelFile = kernelDir </> "kernel.json"
+      let kernelsDir = dataDir </> "kernels"
+      createDirectory kernelsDir
+      let thisKernelName = languageName (kernelLanguageInfo config)
+          thisKernelDir = kernelsDir </> thisKernelName
+      createDirectory thisKernelDir
+      kernelSpec <- writeKernelspec config thisKernelDir
+      let kernelFile = thisKernelDir </> "kernel.json"
       BL.writeFile kernelFile (A.encode (A.toJSON kernelSpec))
 
 notebook :: FilePath -> String -> IO ()
 notebook configDir target = do
+  home <- getEnv "HOME"
   let targetDir = configDir </> target
       subConfigDir = targetDir </> "config"
       dataDir = targetDir </> "data"
@@ -174,7 +178,8 @@ notebook configDir target = do
         { cmdspec = ShellCommand "jupyter notebook"
         , cwd = Nothing
         , env = Just
-            [ ("JUPYTER_CONFIG_DIR", subConfigDir)
+            [ ("HOME", home)
+            , ("JUPYTER_CONFIG_DIR", subConfigDir)
             , ("JUPYTER_PATH", dataDir)
             , ("JUPYTER_RUNTIME_DIR", runtimeDir)
             ]
@@ -202,11 +207,13 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["kernel", configDir, target, profile] ->
+    ["kernel", configDir, target, profile] -> do
+      let config = makeConfig configDir target
       kernel configDir target profile config
     ["notebook", configDir, target] -> do
       notebook configDir target
     ["install", configDir, target] -> do
+      let config = makeConfig configDir target
       install configDir target config
     _ -> do
       putStrLn "Usage:"
