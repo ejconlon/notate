@@ -1,15 +1,17 @@
 module Main where
 
+import Control.Monad (unless)
+import qualified Data.Aeson as A
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text as T
-
-import System.Environment (getArgs)
-import System.Directory
-
-import Text.Parsec
-import Text.Parsec.String
-
 import IHaskell.IPython.EasyKernel (easyKernel, KernelConfig(..))
 import IHaskell.IPython.Types
+import System.Directory
+import System.Environment (getArgs)
+import System.FilePath
+import System.Process
+import Text.Parsec
+import Text.Parsec.String
 
 -- NOTE(eric) this is just ihaskell test code to be ripped out
 
@@ -70,8 +72,8 @@ languageKernelspec :: KernelSpec
 languageKernelspec = KernelSpec
   { kernelDisplayName = "notate"
   , kernelLanguage = "notate"
-  , kernelCommand = ["notate-exe", "kernel", "{connection_file}"]
-  }
+  , kernelCommand = ["stack", "exec", "notate", "--", "kernel", "{connection_file}"]
+  }  -- TODO should include config and target in command line
 
 displayString :: String -> [DisplayData]
 displayString str = [DisplayData PlainText (T.pack str)]
@@ -141,34 +143,67 @@ config = KernelConfig
 
 
 install :: FilePath -> String -> KernelConfig IO output result -> IO ()
-install configDir target config = undefined
-
-  -- liftIO $ withTmpDir $ \tmp -> do
-  --   let kernelDir = tmp </> languageName (kernelLanguageInfo config)
-  --   createDirectoryIfMissing True kernelDir
-  --   kernelSpec <- writeKernelspec config kernelDir
-
-  --   let filename = kernelDir </> "kernel.json"
-  --   BL.writeFile filename $ encode $ toJSON kernelSpec
-
-  --   let replaceFlag = ["--replace" | replace]
-  --       installPrefixFlag = maybe ["--user"] (\prefix -> ["--prefix", prefix]) installPrefixMay
-  --       cmd = concat [["kernelspec", "install"], installPrefixFlag, [kernelDir], replaceFlag]
-  --   void $ rawSystem "ipython" cmd
-  -- where
-  --   withTmpDir act = do
-  --     tmp <- getTemporaryDirectory
-  --     withTempDirectory tmp "easyKernel" act
+install configDir target config = do
+  createDirectoryIfMissing False configDir
+  let targetDir = configDir </> target
+  exists <- doesDirectoryExist targetDir
+  if exists
+    then error ("Already exists: " ++ targetDir)
+    else do
+      createDirectory targetDir
+      let subConfigDir = targetDir </> "config"
+          dataDir = targetDir </> "data"
+          runtimeDir = targetDir </> "runtime"
+      createDirectory subConfigDir
+      createDirectory dataDir
+      createDirectory runtimeDir
+      let kernelName = languageName (kernelLanguageInfo config)
+          kernelDir = dataDir </> kernelName
+      createDirectory kernelDir
+      kernelSpec <- writeKernelspec config kernelDir
+      let kernelFile = kernelDir </> "kernel.json"
+      BL.writeFile kernelFile (A.encode (A.toJSON kernelSpec))
 
 notebook :: FilePath -> String -> IO ()
-notebook = undefined
+notebook configDir target = do
+  let targetDir = configDir </> target
+      subConfigDir = targetDir </> "config"
+      dataDir = targetDir </> "data"
+      runtimeDir = targetDir </> "runtime"
+      procDef = CreateProcess
+        { cmdspec = ShellCommand "jupyter notebook"
+        , cwd = Nothing
+        , env = Just
+            [ ("JUPYTER_CONFIG_DIR", subConfigDir)
+            , ("JUPYTER_PATH", dataDir)
+            , ("JUPYTER_RUNTIME_DIR", runtimeDir)
+            ]
+        , std_in = Inherit
+        , std_out = Inherit
+        , std_err = Inherit
+        , close_fds = False
+        , create_group = False
+        , delegate_ctlc = True
+        , detach_console = False
+        , create_new_console = False
+        , new_session = False
+        , child_group = Nothing
+        , child_user = Nothing
+        }
+  (_, _, _, handle) <- createProcess procDef
+  exitCode <- waitForProcess handle
+  putStrLn ("jupyter exited with " ++ (show exitCode))
+  return ()
+
+kernel :: FilePath -> String -> FilePath -> KernelConfig IO output result -> IO ()
+kernel = undefined
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["kernel", profile] ->
-      easyKernel profile config
+    ["kernel", configDir, target, profile] ->
+      kernel configDir target profile config
     ["notebook", configDir, target] -> do
       notebook configDir target
     ["install", configDir, target] -> do
@@ -177,4 +212,4 @@ main = do
       putStrLn "Usage:"
       putStrLn "notate install CONFIG_DIR TARGET"
       putStrLn "notate notebook CONFIG_DIR TARGET"
-      putStrLn "notate kernel PROFILE_FILE"
+      putStrLn "notate kernel CONFIG_DIR TARGET PROFILE_FILE"
