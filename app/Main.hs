@@ -6,6 +6,7 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text as T
 import IHaskell.IPython.EasyKernel (easyKernel, KernelConfig(..))
 import IHaskell.IPython.Types
+import Notate.Core
 import System.Directory
 import System.Environment (getArgs, getEnv)
 import System.FilePath
