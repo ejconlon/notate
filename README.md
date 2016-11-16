@@ -22,8 +22,8 @@ These are set when running `jupyter`:
     JUPYTER_RUNTIME_DIR=.notate/myproject/runtime
 
 
-Install and Run
----------------
+Installation and Execution
+--------------------------
 
 First you must have `jupyter` installed and on your `PATH`.  You'll also need `libzmq` on your ld path. (ZMQ is used over the socket between `jupyter` and the kernel.) This can be done on Mac like
 
