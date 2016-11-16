@@ -68,11 +68,11 @@ languageConfig = LanguageInfo
   , languageCodeMirrorMode = "null"
   }
 
-makeKernelSpec :: FilePath -> String -> KernelSpec
-makeKernelSpec configDir target = KernelSpec
+makeKernelSpec :: FilePath -> FilePath -> String -> KernelSpec
+makeKernelSpec projectDir configDir target = KernelSpec
   { kernelDisplayName = "notate"
   , kernelLanguage = "notate"
-  , kernelCommand = ["stack", "exec", "notate", "--", "kernel", configDir, target, "{connection_file}"]
+  , kernelCommand = ["stack", "exec", "notate", "--", "kernel", projectDir, configDir, target, "{connection_file}"]
   }
 
 displayString :: String -> [DisplayData]
@@ -125,9 +125,9 @@ languageRun code init intermediate = do
        Left err   -> err
        Right expr -> show (eval expr), IHaskell.IPython.Types.Ok, "")
 
-makeConfig :: FilePath -> String -> KernelConfig IO String String
-makeConfig configDir target =
-  let kernelSpec = makeKernelSpec configDir target
+makeConfig :: FilePath -> FilePath -> String -> KernelConfig IO String String
+makeConfig projectDir configDir target =
+  let kernelSpec = makeKernelSpec projectDir configDir target
   in KernelConfig
   { kernelLanguageInfo = languageConfig
   , writeKernelspec = const (return kernelSpec)
@@ -143,8 +143,9 @@ makeConfig configDir target =
   , kernelImplVersion = "0.0"
   }
 
-install :: FilePath -> String -> KernelConfig IO output result -> IO ()
-install configDir target config = do
+install :: FilePath -> FilePath -> String -> IO ()
+install projectDir configDir target = do
+  let config = makeConfig projectDir configDir target
   createDirectoryIfMissing False configDir
   let targetDir = configDir </> target
   exists <- doesDirectoryExist targetDir
@@ -167,16 +168,16 @@ install configDir target config = do
       let kernelFile = thisKernelDir </> "kernel.json"
       BL.writeFile kernelFile (A.encode (A.toJSON kernelSpec))
 
-notebook :: FilePath -> String -> IO ()
-notebook configDir target = do
+notebook :: FilePath -> FilePath -> String -> IO ()
+notebook projectDir configDir target = do
   home <- getEnv "HOME"
   let targetDir = configDir </> target
       subConfigDir = targetDir </> "config"
       dataDir = targetDir </> "data"
       runtimeDir = targetDir </> "runtime"
       procDef = CreateProcess
-        { cmdspec = ShellCommand "jupyter notebook"
-        , cwd = Nothing
+        { cmdspec = ShellCommand ("jupyter notebook")
+        , cwd = Just projectDir
         , env = Just
             [ ("HOME", home)
             , ("JUPYTER_CONFIG_DIR", subConfigDir)
@@ -200,23 +201,31 @@ notebook configDir target = do
   putStrLn ("jupyter exited with " ++ (show exitCode))
   return ()
 
-kernel :: FilePath -> String -> FilePath -> KernelConfig IO output result -> IO ()
-kernel = undefined
+kernel :: FilePath -> FilePath -> String -> FilePath -> IO ()
+kernel projectDir configDir target profile = do
+  let config = makeConfig projectDir configDir target
+  putStrLn "starting notate kernel"
+  easyKernel profile config
+  putStrLn "finished notate kernel"
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["kernel", configDir, target, profile] -> do
-      let config = makeConfig configDir target
-      kernel configDir target profile config
-    ["notebook", configDir, target] -> do
-      notebook configDir target
-    ["install", configDir, target] -> do
-      let config = makeConfig configDir target
-      install configDir target config
+    ["kernel", projectDir0, configDir0, target, profile] -> do
+      projectDir <- makeAbsolute projectDir0
+      configDir <- makeAbsolute configDir0
+      kernel projectDir configDir target profile
+    ["notebook", projectDir0, configDir0, target] -> do
+      projectDir <- makeAbsolute projectDir0
+      configDir <- makeAbsolute configDir0
+      notebook projectDir configDir target
+    ["install", projectDir0, configDir0, target] -> do
+      projectDir <- makeAbsolute projectDir0
+      configDir <- makeAbsolute configDir0
+      install projectDir configDir target
     _ -> do
       putStrLn "Usage:"
-      putStrLn "notate install CONFIG_DIR TARGET"
-      putStrLn "notate notebook CONFIG_DIR TARGET"
-      putStrLn "notate kernel CONFIG_DIR TARGET PROFILE_FILE"
+      putStrLn "notate install PROJECT_DIR CONFIG_DIR TARGET"
+      putStrLn "notate notebook PROJECT_DIR CONFIG_DIR TARGET"
+      putStrLn "notate kernel PROJECT_DIR CONFIG_DIR TARGET PROFILE_FILE"

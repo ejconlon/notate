@@ -1,3 +1,5 @@
 .stack-work/
 .notate/
+notebooks/.ipynb_checkpoints/
+notebooks/.notate/
 
