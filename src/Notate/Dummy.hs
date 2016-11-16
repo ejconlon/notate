@@ -1,5 +1,5 @@
 module Notate.Dummy
-  ( makeDummyConfig
+  ( makeDummyKernel
   ) where
 
 import Control.Monad.State (gets)
@@ -126,8 +126,8 @@ languageRun code init intermediate = do
        Left err   -> err
        Right expr -> show (eval expr), IHaskell.IPython.Types.Ok, "")
 
-makeDummyConfig :: NotateM (KernelConfig IO String String)
-makeDummyConfig = do
+makeDummyKernel :: NotateM Kernel
+makeDummyKernel = do
   kernelSpec <- makeKernelSpec
   return KernelConfig
     { kernelLanguageInfo = languageConfig

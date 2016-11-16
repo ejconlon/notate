@@ -1,7 +1,7 @@
 module Notate.Actions
-  ( install
-  , notebook
-  , kernel
+  ( runInstall
+  , runNotebook
+  , runKernel
   ) where
 
 import Control.Monad (unless)
@@ -12,19 +12,16 @@ import qualified Data.ByteString.Lazy as BL
 import IHaskell.IPython.EasyKernel (easyKernel, KernelConfig(..))
 import IHaskell.IPython.Types
 import Notate.Core
--- TODO remove this
-import Notate.Dummy (makeDummyConfig)
 import System.Directory
 import System.Environment (getEnv)
 import System.FilePath ((</>))
 import System.Process
 
-install :: NotateM ()
-install = do
+runInstall :: Kernel -> NotateM ()
+runInstall kernel = do
   projectDir <- gets nsProjectDir
   configDir <- gets nsConfigDir
   target <- gets nsTarget
-  config <- makeDummyConfig
   liftIO $ createDirectoryIfMissing False configDir
   let targetDir = configDir </> target
   exists <- liftIO $ doesDirectoryExist targetDir
@@ -40,15 +37,15 @@ install = do
       liftIO $ createDirectory runtimeDir
       let kernelsDir = dataDir </> "kernels"
       liftIO $ createDirectory kernelsDir
-      let thisKernelName = languageName (kernelLanguageInfo config)
+      let thisKernelName = languageName (kernelLanguageInfo kernel)
           thisKernelDir = kernelsDir </> thisKernelName
       liftIO $ createDirectory thisKernelDir
-      kernelSpec <- liftIO $ writeKernelspec config thisKernelDir
+      kernelSpec <- liftIO $ writeKernelspec kernel thisKernelDir
       let kernelFile = thisKernelDir </> "kernel.json"
       liftIO $ BL.writeFile kernelFile (A.encode (A.toJSON kernelSpec))
 
-notebook :: NotateM ()
-notebook = do
+runNotebook :: NotateM ()
+runNotebook = do
   projectDir <- gets nsProjectDir
   configDir <- gets nsConfigDir
   target <- gets nsTarget
@@ -83,9 +80,8 @@ notebook = do
   liftIO $ putStrLn ("jupyter exited with " ++ (show exitCode))
   return ()
 
-kernel :: FilePath -> NotateM ()
-kernel profile = do
-  config <- makeDummyConfig
+runKernel :: FilePath -> Kernel -> NotateM ()
+runKernel profile kernel = do
   liftIO $ putStrLn "starting notate kernel"
-  liftIO $ easyKernel profile config
+  liftIO $ easyKernel profile kernel
   liftIO $ putStrLn "finished notate kernel"
