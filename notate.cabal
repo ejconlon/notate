@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Notate.Actions
+                     , Notate.Client
                      , Notate.Core
                      , Notate.Dummy
   build-depends:       base >= 4.9 && < 5
