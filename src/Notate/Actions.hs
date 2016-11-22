@@ -2,19 +2,22 @@ module Notate.Actions
   ( runInstall
   , runNotebook
   , runKernel
+  , runEval
   ) where
 
-import Control.Monad (unless)
+import Control.Monad (unless, forM_)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.State (gets)
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy as BL
+import Data.List (findIndex)
 import IHaskell.IPython.EasyKernel (easyKernel, KernelConfig(..))
 import IHaskell.IPython.Types
 import Notate.Core
 import System.Directory
 import System.Environment (getEnv)
 import System.FilePath ((</>))
+import System.IO
 import System.Process
 
 runInstall :: Kernel -> NotateM ()
@@ -85,3 +88,62 @@ runKernel profile kernel = do
   liftIO $ putStrLn "starting notate kernel"
   liftIO $ easyKernel profile kernel
   liftIO $ putStrLn "finished notate kernel"
+
+stripModules :: String -> String
+stripModules s =
+  let brackIx = findIndex (== '>') s
+      pipeIx = findIndex (== '|') s
+      lowIx =
+        case (brackIx, pipeIx) of
+          (Nothing, y) -> y
+          (x, Nothing) -> x
+          (x, y) -> min <$> x <*> y
+  in case lowIx of
+    Nothing -> s
+    Just ix -> drop (ix + 1) s
+
+runEval :: NotateM ()
+runEval = do
+  projectDir <- gets nsProjectDir
+  home <- liftIO $ getEnv "HOME"
+  path <- liftIO $ getEnv "PATH"
+  let procDef = CreateProcess
+        { cmdspec = ShellCommand ("stack exec intero")
+        , cwd = Just projectDir
+        , env = Just
+            [ ("HOME", home)
+            , ("PATH", path)
+            ]
+        , std_in = CreatePipe
+        , std_out = CreatePipe
+        , std_err = CreatePipe
+        , close_fds = False
+        , create_group = False
+        , delegate_ctlc = False
+        , detach_console = False
+        , create_new_console = False
+        , new_session = False
+        , child_group = Nothing
+        , child_user = Nothing
+        }
+  (Just pstdin, Just pstdout, Just pstderr, handle) <- liftIO $ createProcess procDef
+  liftIO $ putStrLn "Evaluate in intero (blank lines delimit inputs, ^D to run all):"
+  commands <- liftIO $ hGetContents stdin
+  liftIO $ hPutStrLn pstdin ":{"
+  forM_ (lines commands) $ \c ->
+    if (c == "")
+      then do
+        liftIO $ hPutStrLn pstdin ":}"
+        liftIO $ hPutStrLn pstdin ":{"
+      else do
+        liftIO $ hPutStrLn pstdin c
+  liftIO $ hPutStrLn pstdin ":}"
+  liftIO $ hClose stdin
+  out <- liftIO $ hGetContents pstdout
+  err <- liftIO $ hGetContents pstderr
+  exitCode <- liftIO $ waitForProcess handle
+  liftIO $ putStrLn ("intero exited with " ++ (show exitCode))
+  liftIO $ putStrLn "STDOUT"
+  liftIO $ putStrLn ((unlines . (filter (not . null)) . (stripModules <$>) . lines) out)
+  liftIO $ putStrLn "STDERR"
+  liftIO $ putStrLn err
