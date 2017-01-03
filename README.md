@@ -17,9 +17,9 @@ If not present, `notate install` creates a .notate folder in the current directo
 These are set when running `jupyter`:
 
     HOME=$HOME
-    JUPYTER_CONFIG_DIR=.notate/myproject/config
-    JUPYTER_PATH=.notate/myproject/data
-    JUPYTER_RUNTIME_DIR=.notate/myproject/runtime
+    JUPYTER_CONFIG_DIR=.notate/config
+    JUPYTER_PATH=.notate/data
+    JUPYTER_RUNTIME_DIR=.notate/runtime
 
 Installation and Execution
 --------------------------
@@ -31,11 +31,9 @@ First you must have `jupyter` installed and on your `PATH`.  You'll also need `l
 
 In your project directory, where your cabal target is `myproject`, run
 
-    stack install intero
-    stack install notate
-    notate install . .notate myproject
-    notate notebook . .notate myproject
+    stack exec notate -- install stack.yaml .notate
+    stack exec notate -- notebook stack.yaml .notate
 
-The arguments above are `PROJECT_DIR`, `CONFIG_DIR`, and `TARGET`.
+The arguments above are `STACK_YAML` and `CONFIG_DIR`.
 
 You should then be able to evaluate notebooks as usual using the `notate` kernel.
