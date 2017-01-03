@@ -2,6 +2,7 @@
 
 module Notate.Core where
 
+import Control.Monad.Fail
 import Control.Monad.IO.Class
 import Control.Monad.State
 import IHaskell.IPython.EasyKernel (KernelConfig(..))
@@ -15,7 +16,7 @@ data NotateEnv = NotateEnv
 
 newtype NotateM a = NotateM
   { unNotateM :: StateT NotateEnv IO a
-  } deriving (Functor, Applicative, Monad, MonadState NotateEnv, MonadIO)
+  } deriving (Functor, Applicative, Monad, MonadState NotateEnv, MonadIO, MonadFail)
 
 type Kernel = KernelConfig IO String String
 
