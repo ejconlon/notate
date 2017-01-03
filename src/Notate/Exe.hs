@@ -29,8 +29,7 @@ exe = do
       projectDir <- makeAbsolute projectDir0
       configDir <- makeAbsolute configDir0
       let env = NotateEnv projectDir configDir target
-      undefined
-      --runNotateM runEval env
+      runNotateM runEval env
     _ -> do
       putStrLn "Usage:"
       putStrLn "notate install PROJECT_DIR CONFIG_DIR TARGET"

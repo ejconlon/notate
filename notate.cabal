@@ -25,6 +25,7 @@ library
                      , bytestring
                      , directory
                      , filepath
+                     , hint
                      , ipython-kernel
                      , mtl
                      , parsec
