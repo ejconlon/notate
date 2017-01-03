@@ -24,17 +24,14 @@ import System.Process
 runInstall :: Kernel -> NotateM ()
 runInstall kernel = do
   configDir <- gets nsConfigDir
-  target <- gets nsTarget
-  liftIO $ createDirectoryIfMissing False configDir
-  let targetDir = configDir </> target
-  exists <- liftIO $ doesDirectoryExist targetDir
+  exists <- liftIO $ doesDirectoryExist configDir
   if exists
-    then fail ("Already exists: " ++ targetDir)
+    then fail ("Already exists: " ++ configDir)
     else do
-      liftIO $ createDirectory targetDir
-      let subConfigDir = targetDir </> "config"
-          dataDir = targetDir </> "data"
-          runtimeDir = targetDir </> "runtime"
+      liftIO $ createDirectory configDir
+      let subConfigDir = configDir </> "config"
+          dataDir = configDir </> "data"
+          runtimeDir = configDir </> "runtime"
       liftIO $ createDirectory subConfigDir
       liftIO $ createDirectory dataDir
       liftIO $ createDirectory runtimeDir
@@ -50,12 +47,10 @@ runInstall kernel = do
 runNotebook :: NotateM ()
 runNotebook = do
   configDir <- gets nsConfigDir
-  target <- gets nsTarget
   home <- liftIO $ getEnv "HOME"
-  let targetDir = configDir </> target
-      subConfigDir = targetDir </> "config"
-      dataDir = targetDir </> "data"
-      runtimeDir = targetDir </> "runtime"
+  let subConfigDir = configDir </> "config"
+      dataDir = configDir </> "data"
+      runtimeDir = configDir </> "runtime"
       procDef = CreateProcess
         { cmdspec = ShellCommand ("jupyter notebook")
         , cwd = Nothing

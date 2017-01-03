@@ -69,11 +69,10 @@ makeKernelSpec :: NotateM KernelSpec
 makeKernelSpec = do
   stackYaml <- gets nsStackYaml
   configDir <- gets nsConfigDir
-  target <- gets nsTarget
   return KernelSpec
     { kernelDisplayName = "notate"
     , kernelLanguage = "notate"
-    , kernelCommand = ["stack", "exec", "--stack-yaml=", stackYaml, "notate", "--", "kernel", configDir, target, "{connection_file}"]
+    , kernelCommand = ["stack", "exec", "--stack-yaml=", stackYaml, "notate", "--", "kernel", stackYaml, configDir, "{connection_file}"]
     }
 
 displayString :: String -> [DisplayData]

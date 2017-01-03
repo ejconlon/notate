@@ -11,7 +11,6 @@ import System.Directory (withCurrentDirectory)
 data NotateEnv = NotateEnv
   { nsStackYaml :: FilePath
   , nsConfigDir :: FilePath
-  , nsTarget :: String
   } deriving (Show, Eq)
 
 newtype NotateM a = NotateM

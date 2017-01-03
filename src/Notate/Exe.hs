@@ -10,29 +10,29 @@ exe :: IO ()
 exe = do
   args <- getArgs
   case args of
-    ["kernel", projectDir0, configDir0, target, profile] -> do
-      projectDir <- makeAbsolute projectDir0
+    ["install", stackYaml0, configDir0] -> do
+      stackYaml <- makeAbsolute stackYaml0
       configDir <- makeAbsolute configDir0
-      let env = NotateEnv projectDir configDir target
-      runNotateM (makeKernel >>= runKernel profile) env
-    ["notebook", projectDir0, configDir0, target] -> do
-      projectDir <- makeAbsolute projectDir0
-      configDir <- makeAbsolute configDir0
-      let env = NotateEnv projectDir configDir target
-      runNotateM runNotebook env
-    ["install", projectDir0, configDir0, target] -> do
-      projectDir <- makeAbsolute projectDir0
-      configDir <- makeAbsolute configDir0
-      let env = NotateEnv projectDir configDir target
+      let env = NotateEnv stackYaml configDir
       runNotateM (makeKernel >>= runInstall) env
-    ["eval", projectDir0, configDir0, target] -> do
-      projectDir <- makeAbsolute projectDir0
+    ["notebook", stackYaml0, configDir0] -> do
+      stackYaml <- makeAbsolute stackYaml0
       configDir <- makeAbsolute configDir0
-      let env = NotateEnv projectDir configDir target
+      let env = NotateEnv stackYaml configDir
+      runNotateM runNotebook env
+    ["kernel", stackYaml0, configDir0, profile] -> do
+      stackYaml <- makeAbsolute stackYaml0
+      configDir <- makeAbsolute configDir0
+      let env = NotateEnv stackYaml configDir
+      runNotateM (makeKernel >>= runKernel profile) env
+    ["eval", stackYaml0, configDir0] -> do
+      stackYaml <- makeAbsolute stackYaml0
+      configDir <- makeAbsolute configDir0
+      let env = NotateEnv stackYaml configDir
       runNotateM runEval env
     _ -> do
       putStrLn "Usage:"
-      putStrLn "notate install PROJECT_DIR CONFIG_DIR TARGET"
-      putStrLn "notate notebook PROJECT_DIR CONFIG_DIR TARGET"
-      putStrLn "notate eval PROJECT_DIR CONFIG_DIR TARGET"
-      putStrLn "notate kernel PROJECT_DIR CONFIG_DIR TARGET PROFILE_FILE"
+      putStrLn "notate install STACK_YAML CONFIG_DIR"
+      putStrLn "notate notebook STACK_YAML CONFIG_DIR"
+      putStrLn "notate eval STACK_YAML CONFIG_DIR"
+      putStrLn "notate kernel STACK_YAML CONFIG_DIR PROFILE_FILE"
