@@ -23,7 +23,6 @@ import System.Process
 
 runInstall :: Kernel -> NotateM ()
 runInstall kernel = do
-  projectDir <- gets nsProjectDir
   configDir <- gets nsConfigDir
   target <- gets nsTarget
   liftIO $ createDirectoryIfMissing False configDir
@@ -50,7 +49,6 @@ runInstall kernel = do
 
 runNotebook :: NotateM ()
 runNotebook = do
-  projectDir <- gets nsProjectDir
   configDir <- gets nsConfigDir
   target <- gets nsTarget
   home <- liftIO $ getEnv "HOME"
@@ -60,7 +58,7 @@ runNotebook = do
       runtimeDir = targetDir </> "runtime"
       procDef = CreateProcess
         { cmdspec = ShellCommand ("jupyter notebook")
-        , cwd = Just projectDir
+        , cwd = Nothing
         , env = Just
             [ ("HOME", home)
             , ("JUPYTER_CONFIG_DIR", subConfigDir)

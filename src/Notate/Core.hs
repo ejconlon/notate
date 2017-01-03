@@ -9,7 +9,7 @@ import IHaskell.IPython.EasyKernel (KernelConfig(..))
 import System.Directory (withCurrentDirectory)
 
 data NotateEnv = NotateEnv
-  { nsProjectDir :: FilePath
+  { nsStackYaml :: FilePath
   , nsConfigDir :: FilePath
   , nsTarget :: String
   } deriving (Show, Eq)
@@ -21,4 +21,4 @@ newtype NotateM a = NotateM
 type Kernel = KernelConfig IO String String
 
 runNotateM :: NotateM a -> NotateEnv -> IO a
-runNotateM (NotateM m) env = withCurrentDirectory (nsProjectDir env) (evalStateT m env)
+runNotateM = evalStateT . unNotateM
