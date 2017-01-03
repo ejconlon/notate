@@ -2,7 +2,7 @@ module Notate.Exe where
 
 import Notate.Actions
 import Notate.Core
-import Notate.Dummy (makeDummyKernel)
+import Notate.Real
 import System.Directory (makeAbsolute)
 import System.Environment (getArgs)
 
@@ -14,7 +14,7 @@ exe = do
       projectDir <- makeAbsolute projectDir0
       configDir <- makeAbsolute configDir0
       let env = NotateEnv projectDir configDir target
-      runNotateM (makeDummyKernel >>= runKernel profile) env
+      runNotateM (makeKernel >>= runKernel profile) env
     ["notebook", projectDir0, configDir0, target] -> do
       projectDir <- makeAbsolute projectDir0
       configDir <- makeAbsolute configDir0
@@ -24,7 +24,7 @@ exe = do
       projectDir <- makeAbsolute projectDir0
       configDir <- makeAbsolute configDir0
       let env = NotateEnv projectDir configDir target
-      runNotateM (makeDummyKernel >>= runInstall) env
+      runNotateM (makeKernel >>= runInstall) env
     ["eval", projectDir0, configDir0, target] -> do
       projectDir <- makeAbsolute projectDir0
       configDir <- makeAbsolute configDir0

@@ -13,6 +13,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.List (findIndex)
 import IHaskell.IPython.EasyKernel (easyKernel, KernelConfig(..))
 import IHaskell.IPython.Types
+import qualified Language.Haskell.Interpreter as HI
 import Notate.Core
 import System.Directory
 import System.Environment (getEnv)
@@ -91,8 +92,4 @@ runKernel profile kernel = do
 
 runEval :: NotateM ()
 runEval = do
-  projectDir <- gets nsProjectDir
-  home <- liftIO $ getEnv "HOME"
-  path <- liftIO $ getEnv "PATH"
-  -- TODO Hint
   return ()

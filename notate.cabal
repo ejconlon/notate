@@ -20,16 +20,22 @@ library
                      , Notate.Core
                      , Notate.Dummy
                      , Notate.Exe
+                     , Notate.Interpret
+                     , Notate.Real
   build-depends:       base >= 4.9 && < 5
                      , aeson
                      , bytestring
+                     , deepseq
                      , directory
+                     , exceptions
                      , filepath
                      , hint
+                     , hyper
                      , ipython-kernel
                      , mtl
                      , parsec
                      , process
+                     , scotty
                      , text
                      , transformers
                      , unordered-containers

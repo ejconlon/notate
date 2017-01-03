@@ -3,6 +3,12 @@ resolver: lts-7.14
 packages:
 - '.'
 - 'ipython-kernel'
+- location:
+    git: https://github.com/HeinrichApfelmus/hyper-haskell.git
+    commit: 4cbbe0483e8799ccbce2f57f09486f4a40004e3d
+  extra-dep: true
+  subdirs:
+  - haskell/hyper
 
 extra-deps: []
 
